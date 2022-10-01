@@ -1,23 +1,29 @@
 from __future__ import division, print_function
 # coding=utf-8
-import re, glob, os,cv2
-
+import re, glob, os
 from flask_cors import CORS, cross_origin
 import time
 import cv2
+from datetime import timezone
+import datetime
 from matplotlib import pyplot as plt
 import numpy as np
 import imutils
 import easyocr
-
 # Flask utils
 from flask import Flask, redirect, url_for, request, render_template
-
+from pymongo import MongoClient
+from flask_pymongo import PyMongo
+from mongopass import mongopass
+import subprocess as sp
 
 # Define a flask app
 app = Flask(__name__)
 CORS(app)
 
+client = MongoClient(mongopass)
+db = client.timeseries
+numberplateCol = db.numberplate
 
 print('Model loaded. Check http://127.0.0.1:5000/')
 
@@ -32,6 +38,10 @@ def upload():
     filename = ts + '.jpeg'
     file.save(os.path.join('images', filename))
     message = 'done'
+
+    dt = datetime.datetime.now(timezone.utc)
+    utc_time = dt.replace(tzinfo=timezone.utc)
+    utc_timestamp = utc_time.timestamp()
 
     img = cv2.imread(f'images/{filename}', cv2.IMREAD_COLOR)
     # img = cv2.imread(file, cv2.IMREAD_COLOR)
@@ -66,21 +76,15 @@ def upload():
 
     reader = easyocr.Reader(['en'])
     result = reader.readtext(cropped_image)
-    print(result)
+    if result:
+        print(result)
+        text = result[0][-2]
+        print(text)
+        timeseries_data = {"timestamp": datetime.datetime.now(), "number_plate": text}
+        numberplateCol.insert_one(timeseries_data)
 
-    # cv2.imshow("ibw", cropped_image)
-    # cv2.waitKey(0)
-    # END of part 1 => working great, detects number plate, crops it, and does OCR
-
-    # continue to putText on the image of the car
-    text = result[0][-2]
-    # font = cv2.FONT_HERSHEY_SIMPLEX
-    # res = cv2.putText(img, text=text, org=(approx[0][0][0], approx[1][0][1] + 60), fontFace=font, fontScale=1,
-    #                   color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
-    # res = cv2.rectangle(img, tuple(approx[0][0]), tuple(approx[2][0]), (0, 255, 0), 3)
-
-    print(text)
-    return text
+        return text
+    # return text
 
 
 if __name__ == '__main__':
