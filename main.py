@@ -23,7 +23,7 @@ CORS(app)
 
 client = MongoClient(mongopass)
 db = client.timeseries
-numberplateCol = db.numberplate
+numberplateCol = db.timeseries
 
 print('Model loaded. Check http://127.0.0.1:5000/')
 
@@ -63,6 +63,7 @@ def upload():
             break
 
     print(location)
+    os.remove(os.path.join('images', filename))
 
     mask = np.zeros(gray.shape, np.uint8)
     new_image = cv2.drawContours(mask, [location], 0, 255, -1)
@@ -80,8 +81,9 @@ def upload():
         print(result)
         text = result[0][-2]
         print(text)
-        timeseries_data = {"timestamp": datetime.datetime.now(), "number_plate": text}
-        numberplateCol.insert_one(timeseries_data)
+        if ((len(text) < 9) and (len(text) > 5)):
+            timeseries_data = {"timestamp": datetime.datetime.now(), "number_plate": text}
+            numberplateCol.insert_one(timeseries_data)
 
         return text
     # return text
