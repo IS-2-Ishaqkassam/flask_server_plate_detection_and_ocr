@@ -19,7 +19,7 @@ import subprocess as sp
 
 # Define a flask app
 app = Flask(__name__)
-CORS(app)
+# CORS(app)
 
 client = MongoClient(mongopass)
 db = client.timeseries
