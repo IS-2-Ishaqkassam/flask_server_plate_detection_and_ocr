@@ -1,0 +1,1 @@
+mongopass = "mongodb+srv://ishaq:ishaq@cluster0.ctxzo4z.mongodb.net/?retryWrites=true&w=majority"
